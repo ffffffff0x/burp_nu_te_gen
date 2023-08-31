@@ -20,5 +20,5 @@ jobs:
       - name: Upload JAR file
         uses: actions/upload-artifact@v2
         with:
-          name: ChatGPT-PowerNukkitx
+          name: burp_nu_te_gen_Releases.zip
           path: target/*.jar
