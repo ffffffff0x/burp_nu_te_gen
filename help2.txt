@@ -1,66 +1,123 @@
-https://nuclei.projectdiscovery.io/templating-guide/helper-functions/
-{{Hostname}}
-{{randstr}}
-{{BaseURL}} # https://example.com:443/foo/bar.php
-{{RootURL}} # https://example.com:443
-{{Hostname}} # example.com:443
-{{Host}} # example.com
-{{Port}} # 443
-{{Path}} # /foo
-{{File}} # bar.php
-{{Scheme}} # https
-{{FQDN}} # www.projectdiscovery.io
-{{RDN}} # projectdiscovery.io
-{{DN}} # projectdiscovery
-{{TLD}} # io
-{{SD}} # www
-{{base64("Hello")}}
-{{base64(1234)}}
-{{base64_decode("SGVsbG8=")}}
-{{base64_py("Hello")}}
-{{contains("Hello", "lo")}}
-{{generate_java_gadget("commons-collections3.1", "wget {{interactsh-url}}", "base64")}}
-{{gzip("Hello")}}
-{{hex_decode("6161")}}
-{{hex_encode("aa")}}
-{{html_escape("<body>test</body>")}}
-{{html_unescape("&lt;body&gt;test&lt;/body&gt;")}}
-{{len("Hello")}}
-{{len(5555)}}
-{{md5("Hello")}}
-{{md5(1234)}}
-{{mmh3("Hello")}}
-{{print_debug(1+2, "Hello")}}
-{{rand_base(5, "abc")}}
-{{rand_base(5)}}
-{{rand_char("abc")}}
-{{rand_char()}}
-{{rand_int(1, 10)}}
-{{rand_int(10)}}
-{{rand_int()}}
-{{rand_text_alpha(10, "abc")}}
-{{rand_text_alpha(10)}}
-{{rand_text_alphanumeric(10, "ab12")}}
-{{rand_text_alphanumeric(10)}}
-{{rand_text_numeric(10, 123)}}
-{{rand_text_numeric(10)}}
-{{regex("H([a-z]+)o", "Hello")}}
-{{remove_bad_chars("abcd", "bc")}}
-{{repeat("../", 5)}}
-{{replace("Hello", "He", "Ha")}}
-{{replace_regex("He123llo", "(\\d+)", "")}}
-{{reverse("abc")}}
-{{sha1("Hello")}}
-{{sha256("Hello")}}
-{{to_lower("HELLO")}}
-{{to_upper("hello")}}
-{{trim("aaaHelloddd", "ad")}}
-{{trim_left("aaaHelloddd", "ad")}}
-{{trim_prefix("aaHelloaa", "aa")}}
-{{trim_right("aaaHelloddd", "ad")}}
-{{trim_space("  Hello  ")}}
-{{trim_suffix("aaHelloaa", "aa")}}
-{{unix_time(10)}}
-{{url_decode("https:%2F%2Fprojectdiscovery.io%3Ftest=1")}}
-{{url_encode("https://projectdiscovery.io/test?a=1")}}
-{{wait_for(1)}}
+"https://docs.nuclei.sh/template-guide/helper-functions\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # https://example.com:443/foo/bar.php\n" +
+"\n" +
+"{{BaseURL}}	        # https://example.com:443/foo/bar.php\n" +
+"{{RootURL}}	        # https://example.com:443\n" +
+"{{Hostname}}        # example.com:443\n" +
+"{{Host}}            # example.com\n" +
+"{{Port}}            # 443\n" +
+"{{Path}}            # /foo\n" +
+"{{File}}            # bar.php\n" +
+"{{Scheme}}          # https\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 重点配置参数备忘：\n" +
+"\n" +
+"    # skip-variables-check 可以使 nuclei 不要解析请求内容中 `{{` 为变量\n" +
+"    skip-variables-check: true\n" +
+"\n" +
+"    # 如果模板中包含多个扫描路径，当第一个路径匹配成功时，会自动停止后续路径的扫描，这不会影响其他模板\n" +
+"    stop-at-first-match: true\n" +
+"\n" +
+"    # 单位 bytes- 从服务器响应中读取的最大值\n" +
+"    max-size: 500\n" +
+"\n" +
+"    # cookie-reuse 参数为 true，在多个请求之间维护基于 cookie 的会话，该参数接受布尔类型的输入，默认值为 false。\n" +
+"    cookie-reuse: true\n" +
+"\n" +
+"    # req-condition 与 DSL表达式匹配器一起使用，它允许逻辑表达式包含跨多个请求/响应的条件\n" +
+"    # 在模板中添加 \"req-condition: true\" 选项，响应的属性可以使用 \"<请求编号>\" 后缀来引用特定的响应，例如 status_code_1、status_code_3 或 body_2\n" +
+"    req-condition: true\n" +
+"\n" +
+"    redirects: true     	# 启用重定向\n" +
+"    max- redirects: 3   	# 允许重定向的次数，默认值为 10\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 返回输入的长度\n" +
+"\n" +
+"{{len(\"Hello\")}}\n" +
+"{{len(5555)}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 随机字段\n" +
+"\n" +
+"{{randstr}}\n" +
+"{{rand_int(10)}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 大小写转换\n" +
+"\n" +
+"{{to_lower(\"HELLO\")}}		#将输入转换为小写字符\n" +
+"{{to_upper(\"hello\")}}		#将输入转换为大写字符\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 编码转换\n" +
+"\n" +
+"{{url_decode(\"https:%2F%2Fprojectdiscovery.io%3Ftest=1\")}}  #对输入字符串进行URL解码\n" +
+"{{url_encode(\"https://projectdiscovery.io/test?a=1\")}}   #对输入字符串进行URL编码\n" +
+"\n" +
+"{{hex_decode(\"6161\")}}\n" +
+"{{hex_encode(\"aa\")}}\n" +
+"\n" +
+"{{sha1(\"Hello\")}}\n" +
+"{{sha256(\"Hello\")}}\n" +
+"\n" +
+"{{base64(\"Hello\")}}\n" +
+"{{base64(1234)}}\n" +
+"{{base64_decode(\"SGVsbG8=\")}}\n" +
+"{{base64_py(\"Hello\")}}     #像Python一样将字符串编码为Base64（包含换行符）\n" +
+"\n" +
+"{{md5(\"Hello\")}}\n" +
+"{{md5(1234)}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+"{{rand_base(5)}}\n" +
+"{{rand_base(5, \"abc\")}}\n" +
+"{{rand_char(\"abc\")}}\n" +
+"{{rand_char()}}\n" +
+"{{rand_int()}}\n" +
+"{{rand_int(1, 10)}}\n" +
+"{{rand_text_alpha(10)}}\n" +
+"{{rand_text_alpha(10, \"abc\")}}\n" +
+"{{rand_text_alphanumeric(10)}}\n" +
+"{{rand_text_alphanumeric(10, \"ab12\")}}\n" +
+"{{rand_text_numeric(10)}}\n" +
+"{{rand_text_numeric(10, 123)}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # 验证字符串是否包含子字符串\n" +
+"{{contains(\"Hello\", \"lo\")}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" \n" +
+"{{generate_java_gadget(\"commons-collections3.1\", \"wget {{interactsh-url}}\", \"base64\")}}\n" +
+"{{gzip(\"Hello\")}}\n" +
+"{{html_escape(\"<body>test</body>\")}}\n" +
+"{{html_unescape(\"&lt;body&gt;test&lt;/body&gt;\")}}\n" +
+"{{mmh3(\"Hello\")}}\n" +
+"{{print_debug(1+2, \"Hello\")}}\n" +
+"{{regex(\"H([a-z]+)o\", \"Hello\")}}\n" +
+"{{remove_bad_chars(\"abcd\", \"bc\")}}\n" +
+"{{repeat(\"../\", 5)}}\n" +
+"{{replace(\"Hello\", \"He\", \"Ha\")}}\n" +
+"{{replace_regex(\"He123llo\", \"(\\d+)\", \"\")}}\n" +
+"{{reverse(\"abc\")}}\n" +
+"{{trim(\"aaaHelloddd\", \"ad\")}}\n" +
+"{{trim_left(\"aaaHelloddd\", \"ad\")}}\n" +
+"{{trim_prefix(\"aaHelloaa\", \"aa\")}}\n" +
+"{{trim_right(\"aaaHelloddd\", \"ad\")}}\n" +
+"{{trim_space(\"  Hello  \")}}\n" +
+"{{trim_suffix(\"aaHelloaa\", \"aa\")}}\n" +
+"{{unix_time(10)}}\n" +
+"{{wait_for(1)}}\n" +
+"\n" +
+" ----------------------------分割线----------------------------\n" +
+" # www.projectdiscovery.io\n" +
+"\n" +
+"{{FQDN}}			# www.projectdiscovery.io\n" +
+"{{RDN}}				# projectdiscovery.io\n" +
+"{{DN}}				# projectdiscovery\n" +
+"{{SD}}				# www\n" +
+"{{TLD}}				# io\n";
