@@ -6,7 +6,7 @@
 
     <groupId>net.test</groupId>
     <artifactId>Nu_Te_Gen</artifactId>
-    <version>1.3-SNAPSHOT</version>
+    <version>1.4-SNAPSHOT</version>
 
     <build>
         <plugins>
@@ -49,12 +49,21 @@
                 </executions>
             </plugin>
 
-
-
-
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>alimaven</id>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>alimaven</id>
+            <url>https://maven.aliyun.com/repository/public</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencies>
         <dependency>
@@ -68,6 +77,5 @@
             <version>1.6</version>
         </dependency>
     </dependencies>
-
 
 </project>

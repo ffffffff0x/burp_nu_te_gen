@@ -1,6 +1,9 @@
 name: Java CI
 
-on: [ push, workflow_dispatch ]
+on:
+  create:
+    tags:
+      - v*
 
 jobs:
   build:
@@ -14,11 +17,12 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
+
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots verify
+        run: mvn clean package -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
       - name: Upload JAR file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2.3.1
         with:
           name: burp_nu_te_gen_Releases.zip
-          path: target/*.jar
+          path: target/Nu_Te_Gen-*-SNAPSHOT-jar-with-dependencies.jar
