@@ -52,19 +52,6 @@
         </plugins>
     </build>
 
-    <repositories>
-        <repository>
-            <id>alimaven</id>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </repository>
-    </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>alimaven</id>
-            <url>https://maven.aliyun.com/repository/public</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <dependencies>
         <dependency>
             <groupId>net.portswigger.burp.extender</groupId>

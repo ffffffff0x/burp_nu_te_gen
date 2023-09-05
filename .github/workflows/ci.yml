@@ -26,3 +26,28 @@ jobs:
         with:
           name: burp_nu_te_gen_Releases.zip
           path: target/Nu_Te_Gen-*-SNAPSHOT-jar-with-dependencies.jar
+
+      - name: Zip the Build
+        run: cd target && zip -r ../burp_nu_te_gen_Releases.zip Nu_Te_Gen-*-SNAPSHOT-jar-with-dependencies.jar
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: TODO New Release.
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./burp_nu_te_gen_Releases.zip
+          asset_name: burp_nu_te_gen_Releases.zip
+          asset_content_type: application/zip
