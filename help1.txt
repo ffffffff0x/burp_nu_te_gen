@@ -1,4 +1,4 @@
-官方文档：https://docs.nuclei.sh/getting-started/overview
+官方文档：https://docs.projectdiscovery.io/templates/introduction
 
 nuclei 2.9.1 版本更新了模板格式。如果使用的是较旧的 nuclei 版本，可能无法解析新的模板格式。
 建议将 nuclei 版本升级至 2.9.1 或更高版本以确保正确解析模板格式。
@@ -34,28 +34,31 @@ http:
         Host: {{Hostname}}
         Content-Type: application/json
         
-        {"pageNum":1,"pageSize":{{PageSize}}}
+        {"username":{{username}},"password":{{password}}}
 
+    attack: clusterbomb   # 定义HTTP模糊攻击类型，可用类型： batteringram,pitchfork,clusterbomb
     payloads:
+      username:
+        - 'admin'
+      password:
+        - 'admin'
       # header: helpers/wordlists/header.txt
       Path: 
         - 'api/selectContentManagePage'
-      PageSize:
-        - "{{first_1}}"
-        - "{{first_2}}"
-    attack: clusterbomb		# 定义HTTP模糊攻击类型，可用类型： batteringram,pitchfork,clusterbomb
     
     matchers-condition: and
     matchers:
       - type: dsl
         dsl:
-          # 检查Cookie的MD5校验和是否包含在大写的请求体中
-          - "contains(toupper(body), md5(cookie))"
-          - "contains(header, 'application/json')"
           - "contains(body, 'pageSize')"
           - "contains(body_1, 'pageSize') && contains(body_2, 'pageNum')"
+          - "contains_all(body_1, 'pageSize', 'pageNum')" #单个body包内指定多个匹配关键字
+          - "contains(header, 'application/json')"
           - "status_code == 200"
           - "status_code_1 == 404 && status_code_2 == 200"
+
+          # 检查Cookie的MD5校验和是否包含在大写的请求体中
+          - "contains(toupper(body), md5(cookie))"
         condition: and
 
       - type: dsl
