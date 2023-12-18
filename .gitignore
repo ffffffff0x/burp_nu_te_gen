@@ -2,3 +2,4 @@
 .idea
 /target
 push.sh
+format_*.txt
