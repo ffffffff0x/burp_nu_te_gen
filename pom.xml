@@ -6,7 +6,7 @@
 
     <groupId>net.test</groupId>
     <artifactId>Nu_Te_Gen</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.4.1-SNAPSHOT</version>
 
     <build>
         <plugins>
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.6</version>
+            <version>1.10.0</version>
         </dependency>
     </dependencies>
 

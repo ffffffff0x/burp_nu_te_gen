@@ -300,11 +300,12 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                 JPanel Nuc_jp3 = new JPanel();
                 Nuc_jp3.setLayout(new GridLayout(1, 1));
 
-                String Help_data1 = "官方文档：https://docs.nuclei.sh/getting-started/overview\n" +
+                String Help_data1 = "官方文档：https://docs.projectdiscovery.io/templates/introduction\n" +
                         "\n" +
-                        "nuclei 2.9.1 版本更新了模板格式，建议将 nuclei 版本升级至 2.9.1 或更高版本以确保正确解析模板格式\n" +
+                        "nuclei 2.9.1 版本更新了模板格式。如果使用的是较旧的 nuclei 版本，可能无法解析新的模板格式。\n" +
+                        "建议将 nuclei 版本升级至 2.9.1 或更高版本以确保正确解析模板格式。\n" +
                         "\n" +
-                        " ===========================示例模板===================\n" +
+                        " ===========================示例模板===========================\n" +
                         "id: template-id\n" +
                         "\n" +
                         "info:\n" +
@@ -325,7 +326,7 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "# 自定义模版变量，自2.6.9版本开始支持\n" +
                         "variables:\n" +
                         "  first_1: \"{{rand_int(8, 20)}}\"\n" +
-                        "  first_2: \"{{rand_int(100, 1000)}}\"\n" +
+                        "  first_2: \"{{rand_int(100, 101)}}\"\n" +
                         "\n" +
                         "http:\n" +
                         "  # 解析 raw 格式请求\n" +
@@ -335,28 +336,31 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "        Host: {{Hostname}}\n" +
                         "        Content-Type: application/json\n" +
                         "        \n" +
-                        "        {\"pageNum\":1,\"pageSize\":{{PageSize}}}\n" +
+                        "        {\"username\":{{username}},\"password\":{{password}}}\n" +
                         "\n" +
+                        "    attack: clusterbomb   # 定义HTTP模糊攻击类型，可用类型： batteringram,pitchfork,clusterbomb\n" +
                         "    payloads:\n" +
-                        "      header: helpers/wordlists/header.txt\n" +
+                        "      username:\n" +
+                        "        - 'admin'\n" +
+                        "      password:\n" +
+                        "        - 'admin'\n" +
+                        "      # header: helpers/wordlists/header.txt\n" +
                         "      Path: \n" +
                         "        - 'api/selectContentManagePage'\n" +
-                        "      PageSize:\n" +
-                        "        - \"{{first_1}}\"\n" +
-                        "        - \"{{first_2}}\"\n" +
-                        "    attack: clusterbomb		# 定义HTTP模糊攻击类型，可用类型： batteringram,pitchfork,clusterbomb\n" +
                         "    \n" +
                         "    matchers-condition: and\n" +
                         "    matchers:\n" +
                         "      - type: dsl\n" +
                         "        dsl:\n" +
-                        "          # 检查Cookie的MD5校验和是否包含在大写的请求体中\n" +
-                        "          - \"contains(toupper(body), md5(cookie))\"\n" +
-                        "          - \"contains(header, 'application/json')\"\n" +
                         "          - \"contains(body, 'pageSize')\"\n" +
                         "          - \"contains(body_1, 'pageSize') && contains(body_2, 'pageNum')\"\n" +
+                        "          - \"contains_all(body_1, 'pageSize', 'pageNum')\" #单个body包内指定多个匹配关键字\n" +
+                        "          - \"contains(header, 'application/json')\"\n" +
                         "          - \"status_code == 200\"\n" +
                         "          - \"status_code_1 == 404 && status_code_2 == 200\"\n" +
+                        "\n" +
+                        "          # 检查Cookie的MD5校验和是否包含在大写的请求体中\n" +
+                        "          - \"contains(toupper(body), md5(cookie))\"\n" +
                         "        condition: and\n" +
                         "\n" +
                         "      - type: dsl\n" +
@@ -373,24 +377,24 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "        words:\n" +
                         "          - \"{{first_2}}\"\n" +
                         "\n" +
-                        "      # Interactsh匹配器，需要和使用 {{interactsh_url}}\n" +
+                        "      # Interactsh匹配器，需要和使用 {{interactsh_response}}\n" +
                         "      # 可匹配 interactsh_protocol、interactsh_request和 interactsh_response 三处\n" +
                         "\n" +
                         "      # 确认HTTP交互\n" +
                         "      - type: word\n" +
-                        "        part: interactsh_protocol\n" +
+                        "        part: interactsh_protocol \n" +
                         "        words:\n" +
                         "          - \"http\"\n" +
                         "\n" +
                         "      # 确认检索/etc/passwd文件\n" +
                         "      - type: regex\n" +
-                        "        part: interactsh_request\n" +
+                        "        part: interactsh_request \n" +
                         "        regex:\n" +
                         "          - \"root:[x*]:0:0:\"\n" +
                         "\n" +
                         "      # 确认DNS交互\n" +
                         "      - type: word\n" +
-                        "        part: interactsh_response\n" +
+                        "        part: interactsh_response \n" +
                         "        words:\n" +
                         "          - \"dns\"\n" +
                         "\n" +
@@ -427,15 +431,15 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "          - \"(?m)[0-9]{3,10}\\.[0-9]+\"\n" +
                         "\n" +
                         " ----------------------------分割线----------------------------\n" +
-                        " # 嵌套表达式\n" +
-                        " ❌ {{url_decode({{base64_decode('SGVsbG8=')}})}}\n" +
-                        " ✔ {{url_decode(base64_decode('SGVsbG8='))}}\n" +
+                        "# 嵌套表达式\n" +
+                        "❌ {{url_decode({{base64_decode('SGVsbG8=')}})}}\n" +
+                        "✔ {{url_decode(base64_decode('SGVsbG8='))}}\n" +
                         "\n" +
-                        " # 如果需要在 extractor 中使用,比如将 extractor 提取的变量值 test 进行处理\n" +
-                        " {{url_decode(base64_decode('{{test}}'))}}\n" +
+                        "# 如果需要在 extractor 中使用,比如将 extractor 提取的变量值 test 进行处理\n" +
+                        "{{url_decode(base64_decode('{{test}}'))}}\n" +
                         "\n" +
                         " ----------------------------分割线----------------------------\n" +
-                        " # 自 Nuclei v2.3.6 发行以来，Nuclei 支持使用 interact.sh API 内置自动请求关联来实现基于 OOB 的漏洞扫描\n" +
+                        "# 自 Nuclei v2.3.6 发行以来，Nuclei 支持使用 interact.sh API 内置自动请求关联来实现基于 OOB 的漏洞扫描\n" +
                         "http:\n" +
                         "  - raw:\n" +
                         "      - |\n" +
@@ -499,8 +503,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "    # cookie-reuse 参数为 true，在多个请求之间维护基于 cookie 的会话，该参数接受布尔类型的输入，默认值为 false。\n" +
                         "    cookie-reuse: true\n" +
                         "\n" +
-                        "    # req-condition 与 DSL表达式匹配器一起使用，它允许逻辑表达式包含跨多个请求/响应的条件\n" +
-                        "    # 在模板中添加 \"req-condition: true\" 选项，响应的属性可以使用 \"<请求编号>\" 后缀来引用特定的响应，例如 status_code_1、status_code_3 或 body_2\n" +
+                        "    # 请求条件与匹配器中的DSL表达式一起使用。它们允许逻辑表达式包含跨多个请求/响应的条件。\n" +
+                        "    # 在模板中添加 \"req-condition: true\" 选项。响应的属性可以使用 \"<请求编号>\" 后缀来引用特定的响应，例如 status_code_1、status_code_3 或 body_2。\n" +
                         "    req-condition: true\n" +
                         "\n" +
                         "    matchers-condition: and\n" +
@@ -541,7 +545,8 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "  - raw:\n" +
                         "      - |\n" +
                         "        GET https://example.com:443/gg HTTP/1.1\n" +
-                        "        Host: example.com:443\n";;
+                        "        Host: example.com:443\n";
+
 
                 JTextArea Nuc_ta_3 = new JTextArea();
                 Nuc_ta_3.setText(Help_data1);
@@ -551,19 +556,19 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                 Nuc_ta_3.setEditable(true);//可编辑
                 JScrollPane Nuc_sp_3 = new JScrollPane(Nuc_ta_3);
 
-                String Help_data2 = "https://docs.nuclei.sh/template-guide/helper-functions\n" +
+                String Help_data2 = "官方文档：https://docs.projectdiscovery.io/templates/reference/helper-functions\n" +
                         "\n" +
                         " ----------------------------分割线----------------------------\n" +
                         " # https://example.com:443/foo/bar.php\n" +
                         "\n" +
-                        "{{BaseURL}}\t# https://example.com:443/foo/bar.php\n" +
-                        "{{RootURL}}\t# https://example.com:443\n" +
-                        "{{Hostname}}\t# example.com:443\n" +
-                        "{{Host}}\t# example.com\n" +
-                        "{{Port}}\t# 443\n" +
-                        "{{Path}}\t# /foo\n" +
-                        "{{File}}\t# bar.php\n" +
-                        "{{Scheme}}\t# https\n" +
+                        "{{BaseURL}}	        # https://example.com:443/foo/bar.php\n" +
+                        "{{RootURL}}	        # https://example.com:443\n" +
+                        "{{Hostname}}        # example.com:443\n" +
+                        "{{Host}}            # example.com\n" +
+                        "{{Port}}            # 443\n" +
+                        "{{Path}}            # /foo\n" +
+                        "{{File}}            # bar.php\n" +
+                        "{{Scheme}}          # https\n" +
                         "\n" +
                         " ----------------------------分割线----------------------------\n" +
                         " # 重点配置参数备忘：\n" +
@@ -586,6 +591,13 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         "\n" +
                         "    redirects: true     	# 启用重定向\n" +
                         "    max- redirects: 3   	# 允许重定向的次数，默认值为 10\n" +
+                        "\n" +
+                        " ----------------------------分割线----------------------------\n" +
+                        " # 模板签名：\n" +
+                        "\n" +
+                        "    # 从v3.0.0开始支持签名，未签名的模板默认会被禁用\n" +
+                        "    # 批量对模板进行签名\n" +
+                        "    nuclei -lfa -duc -sign -t /home/nuclei-templates\n" +
                         "\n" +
                         " ----------------------------分割线----------------------------\n" +
                         " # 返回输入的长度\n" +
@@ -669,11 +681,12 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                         " ----------------------------分割线----------------------------\n" +
                         " # www.projectdiscovery.io\n" +
                         "\n" +
-                        "{{FQDN}}\t# www.projectdiscovery.io\n" +
-                        "{{RDN}}\t# projectdiscovery.io\n" +
-                        "{{DN}}\t# projectdiscovery\n" +
-                        "{{SD}}\t# www\n" +
-                        "{{TLD}}\t# io\n";
+                        "{{FQDN}}			# www.projectdiscovery.io\n" +
+                        "{{RDN}}				# projectdiscovery.io\n" +
+                        "{{DN}}				# projectdiscovery\n" +
+                        "{{SD}}				# www\n" +
+                        "{{TLD}}				# io\n";
+
 
                 JTextArea Nuc_ta_4 = new JTextArea();
                 Nuc_ta_4.setText(Help_data2);
@@ -813,9 +826,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                 "  description: |\n" +
                 "    %s\n" +
                 "  metadata:\n" +
-                "    - fofa-query: \n" +
-                "    - shodan-query: \n" +
-                "    - hunter-query: \n" +
+                "    fofa-query: \n" +
+                "    shodan-query: \n" +
+                "    hunter-query: \n" +
                 "  reference:\n" +
                 "    - https://\n" +
                 "  tags: %s\n\n";
