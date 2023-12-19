@@ -826,9 +826,9 @@ public class BurpExtender implements IBurpExtender, ITab, IHttpListener {
                 "  description: |\n" +
                 "    %s\n" +
                 "  metadata:\n" +
-                "    - fofa-query: \n" +
-                "    - shodan-query: \n" +
-                "    - hunter-query: \n" +
+                "    fofa-query: \n" +
+                "    shodan-query: \n" +
+                "    hunter-query: \n" +
                 "  reference:\n" +
                 "    - https://\n" +
                 "  tags: %s\n\n";
